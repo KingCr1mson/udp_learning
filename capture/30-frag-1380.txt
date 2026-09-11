@@ -1,0 +1,8 @@
+2026-09-12 00:25:54.391613 1a:ea:9e:59:83:5d > 1e:72:bf:20:9d:e5, ethertype IPv4 (0x0800), length 1410: (tos 0x0, ttl 63, id 61368, offset 0, flags [+], proto UDP (17), length 1396)
+    172.31.10.10.46119 > 172.31.11.1.9999: UDP, length 1380
+2026-09-12 00:25:54.391615 1a:ea:9e:59:83:5d > 1e:72:bf:20:9d:e5, ethertype IPv4 (0x0800), length 46: (tos 0x0, ttl 63, id 61368, offset 1376, flags [none], proto UDP (17), length 32)
+    172.31.10.10 > 172.31.11.1: ip-proto-17
+2026-09-12 00:25:54.391751 1e:72:bf:20:9d:e5 > 1a:ea:9e:59:83:5d, ethertype IPv4 (0x0800), length 1410: (tos 0x0, ttl 64, id 59079, offset 0, flags [+], proto UDP (17), length 1396)
+    172.31.11.1.9999 > 172.31.10.10.46119: UDP, length 1380
+2026-09-12 00:25:54.391758 1e:72:bf:20:9d:e5 > 1a:ea:9e:59:83:5d, ethertype IPv4 (0x0800), length 46: (tos 0x0, ttl 64, id 59079, offset 1376, flags [none], proto UDP (17), length 32)
+    172.31.11.1 > 172.31.10.10: ip-proto-17

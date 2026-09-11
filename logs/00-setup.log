@@ -1,0 +1,199 @@
+# 日志开始: 2026-09-12T00:24:23+08:00
+# 主机: DESKTOP-VEFBU1J
+# 用户: root
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║ UDP 实验环境搭建                                               ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+── 0. 前置检查 ──────────────────────────────────────────
+[ OK ] docker 可用: 29.2.0
+
+拓扑常量：
+  client = udplab-client  (172.31.10.10)
+  router = udplab-router  (172.31.10.1 / 172.31.11.100)
+  server = udplab-server  (172.31.11.1)
+  近端链路 = udplab-net-near  MTU 1500
+  远端链路 = udplab-net-far   MTU 1400   <-- 瓶颈
+  ★ 记住这个数字：1400。本章所有“包太大”的实验都由它触发。
+
+── 1. 构建实验镜像 udplab:24.04 ──────────────────────────────────────────
+DOCKER_CONFIG = /data/network/tcp_ip/udp-lab/.docker
+  （指到工作目录内，避开沙箱下 ~/.docker 不可写导致的 buildx 权限错误）
+[ OK ] 镜像已存在（需要重建请用 REBUILD=1 /data/network/tcp_ip/udp-lab/scripts/00-setup.sh）
+
+镜像内工具版本：
+ip utility, iproute2-6.1.0, libbpf 1.3.0
+ping from iputils 20240117
+libcap: yes, IDN: yes, NLS: no, error.h: yes, getrandom(): yes, __fpending(): yes
+tcpdump version 4.99.4
+ss utility, iproute2-6.1.0
+Python 3.12.3
+
+── 2. 清理同名旧资源（保证可重复执行） ──────────────────────────────────────────
+  已删除旧容器 udplab-client
+  已删除旧容器 udplab-router
+  已删除旧容器 udplab-server
+  已删除旧网络 udplab-net-near
+  已删除旧网络 udplab-net-far
+[ OK ] 清理完成
+
+── 3. 创建两条链路（MTU 不同） ──────────────────────────────────────────
+$ docker network create -d bridge -o com.docker.network.driver.mtu=1500 --subnet 172.31.10.0/24 --gateway 172.31.10.254 udplab-net-near
+ca3c72c0bbc18370bcfd7f34ba9a3e92956c79105e8fdda9d7c5d357efa9eecf
+$ docker network create -d bridge -o com.docker.network.driver.mtu=1400 --subnet 172.31.11.0/24 --gateway 172.31.11.6 udplab-net-far
+2ca2d54978cde19e7915142d182f46501a78179bff34ca9d07aa29d6f59f2341
+
+实际生效的 MTU（用 docker network inspect 反查）：
+  udplab-net-near        MTU=1500
+  udplab-net-far         MTU=1400
+
+── 4. 启动容器 ──────────────────────────────────────────
+$ docker run -d --name udplab-client --hostname client --network udplab-net-near --ip 172.31.10.10 --cap-add NET_RAW --cap-add NET_ADMIN -v /data/network/tcp_ip/udp-lab/tools:/lab/tools:ro udplab:24.04
+cfa6947e0d9dab8e516dc049e11eaa9ad488971afa8b7c19d516ad5b6f01bbb6
+$ docker run -d --name udplab-server --hostname server --network udplab-net-far --ip 172.31.11.1 --cap-add NET_RAW --cap-add NET_ADMIN -v /data/network/tcp_ip/udp-lab/tools:/lab/tools:ro udplab:24.04
+f2bb83f87efa82302bcb8390ce5b7b1c1ef7f8ab2175829a208a48543d88ba11
+$ docker run -d --name udplab-router --hostname router --network udplab-net-near --ip 172.31.10.1 --cap-add NET_RAW --cap-add NET_ADMIN --cap-add NET_BIND_SERVICE -v /data/network/tcp_ip/udp-lab/tools:/lab/tools:ro udplab:24.04
+26636b3104496de00b584526581b3788a90ba36adbec14fc21a1d094eddb3d98
+$ docker network connect --ip 172.31.11.100 udplab-net-far udplab-router
+[ OK ] 三个容器已启动并处于运行状态
+
+── 4.5 地址规划自检：容器地址必须落在所属链路的子网内 ──────────────────────────────────────────
+  udplab-net-near 子网 = 172.31.10.0/24
+  udplab-net-far  子网 = 172.31.11.0/24
+  udplab-client    172.31.10.10    属于 172.31.10.0/24       ✅ (eth0)
+  udplab-router    172.31.10.1     属于 172.31.10.0/24       ✅ (eth0)
+  udplab-router    172.31.11.2     属于 172.31.11.0/24       ✅ (eth1(转发地址))
+  udplab-server    172.31.11.1     属于 172.31.11.0/24       ✅ (eth0)
+  udplab-server    172.31.11.1     与 client 不同子网 ✅ (必须经 router 转发)
+
+[INFO] docker 反欺骗规则现状（raw 表，只对 docker 台账地址生效）：
+    -A PREROUTING -d 172.31.10.10/32 ! -i br-ca3c72c0bbc1 -j DROP
+    -A PREROUTING -d 172.31.11.1/32 ! -i br-2ca2d54978cd -j DROP
+    -A PREROUTING -d 172.31.10.1/32 ! -i br-ca3c72c0bbc1 -j DROP
+    -A PREROUTING -d 172.31.11.100/32 ! -i br-2ca2d54978cd -j DROP
+    说明：上面针对 172.31.11.1 的规则只影响从别的网桥进来的包；
+    本实验的转发地址是 172.31.11.2（不在 docker 台账中），不会被拦。
+  udplab-client 的 docker 台账地址 = 172.31.10.10/24
+  udplab-server 的 docker 台账地址 = 
+172.31.11.1/24
+[ OK ] 地址规划自检通过
+
+── 5. 配置接口地址与静态路由 ──────────────────────────────────────────
+[udplab-client]$ ip addr add 172.31.10.10/24 dev eth0
+[udplab-client]$ ip link set eth0 up
+[udplab-client]$ ip route replace default via 172.31.10.1
+[udplab-client]$ ip route replace 172.31.11.0/24 via 172.31.10.1
+[udplab-client]$ bash -c for n in 172.31.20.0/24 172.31.12.0/24; do
+    ip route del "$n" 2>/dev/null && echo "  已清理历史错路由 $n" || true
+  done
+[udplab-server]$ ip link set eth0 up
+[udplab-server]$ bash -c 
+  want="172.31.11.1"
+  for a in $(ip -4 -o addr show dev eth0 | awk "{print \$4}" | cut -d/ -f1); do
+    if [ "$a" != "$want" ]; then
+      echo "  移除多余地址 $a（会被 docker raw 表 DROP）"
+      ip addr del "$a/24" dev eth0 || true
+    fi
+  done
+  ip -4 -o addr show dev eth0
+
+2: eth0    inet 172.31.11.1/24 brd 172.31.11.255 scope global eth0\       valid_lft forever preferred_lft forever
+[udplab-server]$ ip route replace default via 172.31.11.2
+[udplab-router]$ ip addr add 172.31.10.1/24 dev eth0
+[udplab-router]$ ip addr add 172.31.11.100/24 dev eth1
+[udplab-router]$ ip link set eth0 up
+[udplab-router]$ ip link set eth1 up
+[udplab-router]$ ip link set eth1 mtu 1400
+[udplab-router]$ ip addr add 172.31.11.2/24 dev eth1
+[udplab-router]$ sysctl -w net.ipv4.ip_forward=1
+sysctl: setting key "net.ipv4.ip_forward", ignoring: Read-only file system
+net.ipv4.ip_forward = 1
+[udplab-router]$ sysctl -w net.ipv4.icmp_ratelimit=0
+sysctl: setting key "net.ipv4.icmp_ratelimit", ignoring: Read-only file system
+net.ipv4.icmp_ratelimit = 0
+[udplab-router]$ sysctl -w net.ipv4.icmp_ratemask=0
+net.ipv4.icmp_ratemask = 0
+sysctl: setting key "net.ipv4.icmp_ratemask", ignoring: Read-only file system
+[ OK ] 路由配置完成
+
+── 5.5 关闭 docker 的反欺骗规则（否则跨网桥转发会被静默丢弃） ──────────────────────────────────────────
+  背景：docker 会在宿主 nft 的 ip raw 表里为每个容器地址插入
+        'iifname != <本网桥> ip daddr <容器地址> drop'。
+        它只放行同网桥直达的包，会把经路由器转发来的包全部丢掉，
+        且没有任何官方开关可关 —— 只能显式删除。
+[ OK ] 已移除 4 条 docker 反欺骗规则（否则跨网桥转发会被静默丢弃）
+
+── 6. 关闭网卡校验和卸载（让 tcpdump 看到真实校验和） ──────────────────────────────────────────
+  [udplab-client]
+    Actual changes:
+    tx-checksum-ip-generic: off
+    tx-tcp-segmentation: off [not requested]
+    tx-tcp-ecn-segmentation: off [not requested]
+    tx-tcp-mangleid-segmentation: off [not requested]
+    tx-tcp6-segmentation: off [not requested]
+    tx-checksum-sctp: off
+  [udplab-router]
+    Actual changes:
+    tx-checksum-ip-generic: off
+    tx-tcp-segmentation: off [not requested]
+    tx-tcp-ecn-segmentation: off [not requested]
+    tx-tcp-mangleid-segmentation: off [not requested]
+    tx-tcp6-segmentation: off [not requested]
+    tx-checksum-sctp: off
+  [udplab-server]
+    Actual changes:
+    tx-checksum-ip-generic: off
+    tx-tcp-segmentation: off [not requested]
+    tx-tcp-ecn-segmentation: off [not requested]
+    tx-tcp-mangleid-segmentation: off [not requested]
+    tx-tcp6-segmentation: off [not requested]
+    tx-checksum-sctp: off
+[ OK ] 已尝试关闭 tx/rx/tso/gso/gro（失败项说明该网卡不支持，可忽略）
+
+── 7. 拓扑自检 ──────────────────────────────────────────
+
+[INFO] 客户端路由表：
+[udplab-client]$ ip route
+default via 172.31.10.1 dev eth0 
+172.31.10.0/24 dev eth0 proto kernel scope link src 172.31.10.10 
+172.31.11.0/24 via 172.31.10.1 dev eth0 
+
+[INFO] 各接口 MTU：
+  [udplab-client]
+    lo               UNKNOWN        00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP> 
+    eth0@if107       UP             76:11:93:f9:89:16 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+  [udplab-router]
+    lo               UNKNOWN        00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP> 
+    eth0@if109       UP             b2:5c:9c:6d:17:e8 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+    eth1@if110       UP             1a:ea:9e:59:83:5d <BROADCAST,MULTICAST,UP,LOWER_UP> 
+  [udplab-server]
+    lo               UNKNOWN        00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP> 
+    eth0@if108       UP             1e:72:bf:20:9d:e5 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+
+[INFO] 连通性测试（client -> server 经 router 转发）：
+[ OK ] client -> server 通
+
+[INFO] 窄链路验证：client 发 1472 字节载荷（=1500-20-8）
+[ OK ] MTU 1400 的包可以通过 —— 说明路由器 eth1 确实是 1400
+
+[INFO] PMTU 缓存（注意 mtu 字段，它记录的是“试出来”的路径 MTU）：
+[udplab-client]$ ip route get 172.31.11.1
+172.31.11.1 via 172.31.10.1 dev eth0 src 172.31.10.10 uid 0 
+    cache 
+
+╔══════════════════════════════════════════════════════════════════════╗
+║ 环境就绪                                                         ║
+╚══════════════════════════════════════════════════════════════════════╝
+  ★ 接下来按顺序运行：
+  scripts/10-udp-header.sh       UDP 首部与校验和
+  scripts/20-port-unreachable.sh ICMP 端口不可达
+  scripts/30-fragmentation.sh    IP 分片
+  scripts/40-pmtud.sh            路径 MTU 发现与黑洞
+  scripts/50-stats.sh            端口/缓冲区/统计计数器
+  scripts/60-boundary.sh         报文边界、无流控、无重传
+
+全部一次跑完：  scripts/run-all.sh
+查看日志：      ls -l logs/    查看抓包： ls -l capture/
+销毁环境：      scripts/99-teardown.sh

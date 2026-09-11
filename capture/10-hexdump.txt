@@ -1,0 +1,4 @@
+2026-09-12 00:25:01.643636 1a:ea:9e:59:83:5d > 1e:72:bf:20:9d:e5, ethertype IPv4 (0x0800), length 62: (tos 0x0, ttl 63, id 17616, offset 0, flags [none], proto UDP (17), length 48)
+    172.31.10.10.36834 > 172.31.11.1.9999: [udp sum ok] UDP, length 20
+2026-09-12 00:25:01.643762 1e:72:bf:20:9d:e5 > 1a:ea:9e:59:83:5d, ethertype IPv4 (0x0800), length 62: (tos 0x0, ttl 64, id 54385, offset 0, flags [DF], proto UDP (17), length 48)
+    172.31.11.1.9999 > 172.31.10.10.36834: [udp sum ok] UDP, length 20

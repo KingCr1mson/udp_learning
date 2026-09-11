@@ -1,0 +1,4 @@
+2026-09-12 00:25:07.218036 b2:5c:9c:6d:17:e8 > 76:11:93:f9:89:16, ethertype IPv4 (0x0800), length 94: (tos 0xc0, ttl 63, id 61808, offset 0, flags [none], proto ICMP (1), length 80)
+    172.31.11.1 > 172.31.10.10: ICMP 172.31.11.1 udp port 9998 unreachable, length 60
+	(tos 0x0, ttl 63, id 20054, offset 0, flags [none], proto UDP (17), length 52)
+    172.31.10.10.42169 > 172.31.11.1.9998: [udp sum ok] UDP, length 24

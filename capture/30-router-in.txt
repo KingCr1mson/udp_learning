@@ -1,0 +1,10 @@
+2026-09-12 00:26:52.146856 76:11:93:f9:89:16 > b2:5c:9c:6d:17:e8, ethertype IPv4 (0x0800), length 1410: (tos 0x0, ttl 64, id 1613, offset 0, flags [+], proto UDP (17), length 1396)
+    172.31.10.10.42148 > 172.31.11.1.9999: UDP, length 3000
+2026-09-12 00:26:52.146858 76:11:93:f9:89:16 > b2:5c:9c:6d:17:e8, ethertype IPv4 (0x0800), length 1410: (tos 0x0, ttl 64, id 1613, offset 1376, flags [+], proto UDP (17), length 1396)
+    172.31.10.10 > 172.31.11.1: ip-proto-17
+2026-09-12 00:26:52.146859 76:11:93:f9:89:16 > b2:5c:9c:6d:17:e8, ethertype IPv4 (0x0800), length 290: (tos 0x0, ttl 64, id 1613, offset 2752, flags [none], proto UDP (17), length 276)
+    172.31.10.10 > 172.31.11.1: ip-proto-17
+2026-09-12 00:26:52.146905 b2:5c:9c:6d:17:e8 > 76:11:93:f9:89:16, ethertype IPv4 (0x0800), length 590: (tos 0xc0, ttl 63, id 11711, offset 0, flags [none], proto ICMP (1), length 576)
+    172.31.11.1 > 172.31.10.10: ICMP 172.31.11.1 udp port 9999 unreachable, length 556
+	(tos 0x0, ttl 63, id 1613, offset 0, flags [none], proto UDP (17), length 3028)
+    172.31.10.10.42148 > 172.31.11.1.9999: UDP, length 3000

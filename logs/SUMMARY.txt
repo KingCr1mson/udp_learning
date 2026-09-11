@@ -1,0 +1,55 @@
+
+======================================================================
+ UDP 实验汇总报告
+======================================================================
+开始: 2026-09-12T00:24:23+08:00
+结束: 2026-09-12T00:28:34+08:00
+总耗时: 251 秒
+
+---- 各步骤结果 ----
+  OK    00-setup  17s
+  OK    10-udp-header  24s
+  OK    20-port-unreachable  27s
+  OK    30-fragmentation  86s
+  OK    40-pmtud  48s
+  OK    50-stats  19s
+  OK    60-boundary  30s
+
+---- 生成的学习材料 ----
+日志（每节的完整过程，可直接当笔记看）：
+  logs/00-setup.log                                 199 行
+  logs/10-udp-header.log                            216 行
+  logs/20-port-unreachable.log                      131 行
+  logs/30-fragmentation.log                         274 行
+  logs/40-pmtud.log                                 234 行
+  logs/50-stats.log                                 206 行
+  logs/60-boundary.log                              178 行
+
+抓包文件（可用 Wireshark 打开 pcap，或看同名 .txt 文本版）：
+  capture/10-header.pcap                            158 字节
+  capture/10-hexdump.pcap                           180 字节
+  capture/20-port-unreach-client.pcap               134 字节
+  capture/20-router-unreach.pcap                    134 字节
+  capture/30-cost-100.pcap                        32740 字节
+  capture/30-cost-4000.pcap                      835260 字节
+  capture/30-frag-100.pcap                          340 字节
+  capture/30-frag-1372.pcap                        2884 字节
+  capture/30-frag-1380.pcap                        3000 字节
+  capture/30-frag-1472.pcap                        3184 字节
+  capture/30-frag-2000.pcap                        4240 字节
+  capture/30-frag-4000.pcap                        8340 字节
+  capture/30-router-in.pcap                        3788 字节
+  capture/30-router-out.pcap                       3788 字节
+  capture/40-blackhole-after.pcap                    24 字节
+  capture/40-blackhole-before.pcap                  630 字节
+  capture/40-pmtud-icmp.pcap                         24 字节
+
+---- 建议的下一步 ----
+  1. 通读 logs/SUMMARY.txt 与各节日志
+  2. 用 Wireshark 打开 capture/*.pcap，重点看：
+       - UDP 首部四个字段（含校验和验证）
+       - ICMP type3 code3 / code4，以及内嵌的原报文前 8 字节
+       - IP 分片：MF 标志与 fragment offset 的递增
+  3. 自己动手改 tools/udplab.py 里的数字，重跑某一节观察差异
+  4. 销毁环境: scripts/99-teardown.sh
+======================================================================
