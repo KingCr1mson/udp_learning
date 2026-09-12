@@ -38,12 +38,10 @@ LOG_DIR="$LAB_DIR/logs"
 CAP_DIR="$LAB_DIR/capture"
 mkdir -p "$LOG_DIR" "$CAP_DIR"
 
-# 沙箱/受限环境下 ~/.docker 可能不可写，docker buildx 会因为写不了
-# ~/.docker/buildx/activity 而报 "failed to update builder last activity time:
-# permission denied"。统一把 DOCKER_CONFIG 指到工作目录内：
-# 既避开权限问题，也让实验不污染家目录。
-export DOCKER_CONFIG="${DOCKER_CONFIG:-$LAB_DIR/.docker}"
-mkdir -p "$DOCKER_CONFIG" 2>/dev/null || true
+# docker 配置只使用用户级默认目录 ~/.docker（即不覆盖 DOCKER_CONFIG，
+# 由 docker 自己取默认值）。
+# 【为何不放进工作目录】：buildx 会在配置目录里写锁文件、builder 状态和
+# 机器相关的绝对路径；一旦落在仓库内就会被 git 跟踪，污染项目。
 
 # ---------------------------------------------------------------- 拓扑 ----
 PREFIX="udplab"

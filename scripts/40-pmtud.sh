@@ -43,7 +43,7 @@ info "步骤 2：一边监听 ICMP，一边发一个超过 $MTU_FAR 的报文（
 cap_clear "$C_CLIENT"
 cap_start "$C_CLIENT" eth0 "icmp" "40-pmtud-icmp"
 ( cex "$C_CLIENT" python3 /lab/tools/udplab.py icmpwatch --timeout 6 \
-    > /tmp/pmtud-icmpwatch.txt 2>&1 & ) 2>/dev/null
+    > "$LOG_DIR/pmtud-icmpwatch.txt" 2>&1 & ) 2>/dev/null
 sleep 1
 cex "$C_CLIENT" python3 /lab/tools/udplab.py send \
   --dst "$SERVER_IP" --dport "$PORT_CLOSED" --size 1400 --df 1
@@ -52,7 +52,7 @@ cap_stop "$C_CLIENT" "40-pmtud-icmp"
 
 log ""
 info "client 上解码到的 ICMP（注意 Next-Hop MTU 字段）："
-cat /tmp/pmtud-icmpwatch.txt 2>/dev/null | sed 's/^/  /'
+cat "$LOG_DIR/pmtud-icmpwatch.txt" 2>/dev/null | sed 's/^/  /'
 log ""
 info "抓包文本："
 grep -E 'ICMP|IP ' "$CAP_DIR/40-pmtud-icmp.txt" 2>/dev/null | sed 's/^/  /' | head -20

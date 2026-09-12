@@ -38,12 +38,12 @@ note "记住这个数字：$MTU_FAR。本章所有“包太大”的实验都由
 
 # ------------------------------------------------------------ 1. 构建镜像 ---
 h2 "1. 构建实验镜像 $IMG"
-log "DOCKER_CONFIG = $DOCKER_CONFIG"
-log "  （指到工作目录内，避开沙箱下 ~/.docker 不可写导致的 buildx 权限错误）"
+log "docker 配置目录：~/.docker（docker 默认，未做任何覆盖）"
 if [ "${REBUILD:-0}" = "1" ] || ! docker image inspect "$IMG" >/dev/null 2>&1; then
-  if ! run docker build -t "$IMG" -f "$LAB_DIR/image/Dockerfile" "$LAB_DIR/image"; then
+  # 先切到项目根目录再用相对路径构建，日志里就不会写死宿主机的绝对路径
+  if ! ( cd "$LAB_DIR" && run docker build -t "$IMG" -f image/Dockerfile image ); then
     err "镜像构建失败，后续步骤无法继续"
-    err "常见原因：apt 源不可达（需要外网），或 docker 配置目录不可写"
+    err "常见原因：apt 源不可达（需要外网），或 ~/.docker 不可写"
     exit 1
   fi
   ok "镜像构建完成"

@@ -9,6 +9,10 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
+# 统一切到项目根目录，之后一律用相对路径调用子脚本，
+# 日志里就不会写死宿主机的绝对路径。
+cd "$LAB_DIR" || exit 1
+
 export PAUSE="${PAUSE:-0}"
 SUMMARY="$LOG_DIR/SUMMARY.txt"
 
@@ -16,7 +20,7 @@ TOTAL_START=$(date +%s)
 
 h1 "UDP 实验全套执行"
 log "开始时间: $(date -Is)"
-log "工作目录: $LAB_DIR"
+log "工作目录: .（项目根）"
 log "PAUSE=$PAUSE   SKIP_SETUP=${SKIP_SETUP:-0}"
 log ""
 log "将依次执行："
@@ -57,17 +61,17 @@ run_step() {
 }
 
 if [ "${SKIP_SETUP:-0}" != "1" ]; then
-  run_step "$LAB_DIR/scripts/00-setup.sh" "00-setup"
+  run_step "scripts/00-setup.sh" "00-setup"
 else
   info "按要求跳过环境搭建"
 fi
 
-run_step "$LAB_DIR/scripts/10-udp-header.sh"       "10-udp-header"
-run_step "$LAB_DIR/scripts/20-port-unreachable.sh" "20-port-unreachable"
-run_step "$LAB_DIR/scripts/30-fragmentation.sh"    "30-fragmentation"
-run_step "$LAB_DIR/scripts/40-pmtud.sh"            "40-pmtud"
-run_step "$LAB_DIR/scripts/50-stats.sh"            "50-stats"
-run_step "$LAB_DIR/scripts/60-boundary.sh"         "60-boundary"
+run_step "scripts/10-udp-header.sh"       "10-udp-header"
+run_step "scripts/20-port-unreachable.sh" "20-port-unreachable"
+run_step "scripts/30-fragmentation.sh"    "30-fragmentation"
+run_step "scripts/40-pmtud.sh"            "40-pmtud"
+run_step "scripts/50-stats.sh"            "50-stats"
+run_step "scripts/60-boundary.sh"         "60-boundary"
 
 TOTAL_END=$(date +%s)
 
