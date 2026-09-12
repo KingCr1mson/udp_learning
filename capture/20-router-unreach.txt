@@ -1,4 +1,0 @@
-2026-09-12 00:25:27.627788 b2:5c:9c:6d:17:e8 > 76:11:93:f9:89:16, ethertype IPv4 (0x0800), length 94: (tos 0xc0, ttl 64, id 18305, offset 0, flags [none], proto ICMP (1), length 80)
-    172.31.10.1 > 172.31.10.10: ICMP 172.31.10.1 udp port 9998 unreachable, length 60
-	(tos 0x0, ttl 64, id 62434, offset 0, flags [none], proto UDP (17), length 52)
-    172.31.10.10.56966 > 172.31.10.1.9998: [udp sum ok] UDP, length 24

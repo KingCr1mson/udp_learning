@@ -1,7 +1,8 @@
+# 实验运行产物：每次跑脚本都会重新生成，不属于源码，不入库
+logs/
+capture/
+
 # docker 配置只走 ~/.docker，这里做兜底：
 # 防止有人手工把 DOCKER_CONFIG 指回工作目录后，把 buildx 锁文件、
 # builder 状态和机器相关路径误提交进仓库。
 .docker/
-
-# 40-pmtud 运行时的临时文件
-logs/pmtud-icmpwatch.txt
